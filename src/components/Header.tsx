@@ -31,7 +31,7 @@ const Header = () => {
           <a href="#" className="px-5 py-3 text-sm font-semibold text-primary-foreground border-b-2 border-primary-foreground">
             Home
           </a>
-          <a href="#" className="px-5 py-3 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+          <a href="#sign-in" className="px-5 py-3 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors">
             Sign In
           </a>
           <a href="#" className="px-5 py-3 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors">
@@ -47,7 +47,7 @@ const Header = () => {
             <a href="#" className="block py-2 text-primary-foreground text-sm">Help</a>
             <div className="border-t border-primary-foreground/20 mt-2 pt-2">
               <a href="#" className="block py-2 text-primary-foreground text-sm font-semibold">Home</a>
-              <a href="#" className="block py-2 text-primary-foreground/80 text-sm">Sign In</a>
+              <a href="#sign-in" className="block py-2 text-primary-foreground/80 text-sm">Sign In</a>
               <a href="#" className="block py-2 text-primary-foreground/80 text-sm">Register</a>
             </div>
           </div>

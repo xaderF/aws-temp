@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth import hash_password
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserOut
@@ -20,7 +21,12 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> User:
         if student_exists:
             raise HTTPException(status_code=409, detail="Student ID already exists")
 
-    user = User(email=payload.email, student_id=payload.student_id, full_name=payload.full_name)
+    user = User(
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+        student_id=payload.student_id,
+        full_name=payload.full_name,
+    )
     db.add(user)
     db.commit()
     db.refresh(user)

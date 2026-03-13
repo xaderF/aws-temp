@@ -1,4 +1,5 @@
-import heroTap from "@/assets/hero-tap.png";
+const heroTap =
+  "https://placehold.co/320x240/0066CC/ffffff?text=Tap+Card";
 
 const HeroBanner = () => {
   return (
@@ -13,7 +14,7 @@ const HeroBanner = () => {
               Automatically reload your pass or stored value and never worry about having sufficient fare.
             </p>
             <a
-              href="#"
+              href="#sign-in"
               className="inline-block bg-secondary text-secondary-foreground font-semibold px-8 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"
             >
               Sign in
