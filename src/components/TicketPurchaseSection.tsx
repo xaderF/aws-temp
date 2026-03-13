@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCurrentUser, useDeleteTicket, useMyTickets, usePurchaseTicket } from "@/hooks/use-api";
+import { useCurrentUser, useDeleteTicket, useDeleteTickets, useMyTickets, usePurchaseTicket } from "@/hooks/use-api";
 import type { TicketType } from "@/lib/api";
 import {
   Dialog,
@@ -24,7 +24,10 @@ const TicketPurchaseSection = () => {
   const { data: tickets, isLoading: ticketsLoading } = useMyTickets(user ?? null);
   const purchaseTicket = usePurchaseTicket();
   const deleteTicket = useDeleteTicket();
+  const deleteTickets = useDeleteTickets();
   const [pendingOption, setPendingOption] = useState<(typeof TICKET_OPTIONS)[number] | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedTicketIds, setSelectedTicketIds] = useState<string[]>([]);
 
   const openConfirm = (option: (typeof TICKET_OPTIONS)[number]) => {
     setPendingOption(option);
@@ -40,6 +43,50 @@ const TicketPurchaseSection = () => {
     purchaseTicket.mutate(pendingOption.type, {
       onSuccess: () => {
         setPendingOption(null);
+      },
+    });
+  };
+
+  const allTicketIds = Array.isArray(tickets) ? tickets.map((ticket) => ticket.id) : [];
+  const allSelected = allTicketIds.length > 0 && allTicketIds.every((ticketId) => selectedTicketIds.includes(ticketId));
+
+  const enterSelectMode = () => {
+    setIsSelectMode(true);
+    setSelectedTicketIds([]);
+  };
+
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedTicketIds([]);
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedTicketIds([]);
+      return;
+    }
+    setSelectedTicketIds(allTicketIds);
+  };
+
+  const toggleTicketSelection = (ticketId: string) => {
+    setSelectedTicketIds((prev) => (
+      prev.includes(ticketId) ? prev.filter((id) => id !== ticketId) : [...prev, ticketId]
+    ));
+  };
+
+  const deleteSingleTicket = (ticketId: string) => {
+    const confirmed = window.confirm("Delete this ticket from your account? This action cannot be undone.");
+    if (!confirmed) return;
+    deleteTicket.mutate(ticketId);
+  };
+
+  const deleteSelectedTickets = () => {
+    if (selectedTicketIds.length === 0) return;
+    const confirmed = window.confirm(`Delete ${selectedTicketIds.length} selected ticket(s)?`);
+    if (!confirmed) return;
+    deleteTickets.mutate(selectedTicketIds, {
+      onSuccess: () => {
+        exitSelectMode();
       },
     });
   };
@@ -98,58 +145,94 @@ const TicketPurchaseSection = () => {
           ) : !Array.isArray(tickets) || tickets.length === 0 ? (
             <p className="text-muted-foreground">No tickets yet. Purchase one above.</p>
           ) : (
-            <ul className="space-y-3">
-              {tickets.map((ticket) => (
-                <li
-                  key={ticket.id}
-                  className="border border-border rounded-sm p-4 bg-card"
-                >
-                  <div className="flex justify-between items-start flex-wrap gap-2">
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {TICKET_OPTIONS.find((o) => o.type === ticket.type)?.label ?? ticket.type}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Purchased: {new Date(ticket.purchased_at).toLocaleString()}
-                      </p>
-                      {ticket.expires_at && (
-                        <p className="text-sm text-muted-foreground">
-                          Expires: {new Date(ticket.expires_at).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={`text-xs font-medium px-2 py-1 rounded ${
-                        ticket.status === "ACTIVE"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {ticket.status}
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <button
+            <>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                {!isSelectMode ? (
+                  <Button type="button" variant="outline" size="sm" onClick={enterSelectMode}>
+                    Select
+                  </Button>
+                ) : (
+                  <>
+                    <Button type="button" variant="outline" size="sm" onClick={toggleSelectAll}>
+                      {allSelected ? "Clear all" : "Select all"}
+                    </Button>
+                    <Button
                       type="button"
-                      className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
-                      disabled={deleteTicket.isPending}
-                      onClick={() => {
-                        const confirmed = window.confirm(
-                          "Delete this ticket from your account? This action cannot be undone.",
-                        );
-                        if (!confirmed) return;
-                        deleteTicket.mutate(ticket.id);
-                      }}
+                      variant="destructive"
+                      size="sm"
+                      onClick={deleteSelectedTickets}
+                      disabled={selectedTicketIds.length === 0 || deleteTickets.isPending}
                     >
-                      {deleteTicket.isPending ? "Deleting..." : "Delete ticket"}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                      {deleteTickets.isPending ? "Deleting..." : `Delete selected (${selectedTicketIds.length})`}
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={exitSelectMode} disabled={deleteTickets.isPending}>
+                      Done
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <ul className="space-y-3">
+                {tickets.map((ticket) => (
+                  <li
+                    key={ticket.id}
+                    className="group relative border border-border rounded-sm p-4 bg-card"
+                  >
+                    <div className="flex justify-between items-start flex-wrap gap-2">
+                      <div className="flex items-start gap-3">
+                        {isSelectMode && (
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4 accent-primary"
+                            checked={selectedTicketIds.includes(ticket.id)}
+                            onChange={() => toggleTicketSelection(ticket.id)}
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {TICKET_OPTIONS.find((o) => o.type === ticket.type)?.label ?? ticket.type}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Purchased: {new Date(ticket.purchased_at).toLocaleString()}
+                          </p>
+                          {ticket.expires_at && (
+                            <p className="text-sm text-muted-foreground">
+                              Expires: {new Date(ticket.expires_at).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-medium px-2 py-1 rounded ${
+                          ticket.status === "ACTIVE"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {ticket.status}
+                      </span>
+                    </div>
+
+                    {!isSelectMode && (
+                      <button
+                        type="button"
+                        className="absolute right-3 top-3 text-xs px-2 py-1 rounded border border-border text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-destructive hover:border-destructive transition-all disabled:opacity-50"
+                        disabled={deleteTicket.isPending}
+                        onClick={() => deleteSingleTicket(ticket.id)}
+                      >
+                        {deleteTicket.isPending ? "Deleting..." : "Delete"}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
-          {deleteTicket.isError && (
+          {deleteTicket.isError && !isSelectMode && (
             <p className="mt-2 text-sm text-destructive">{deleteTicket.error?.message}</p>
+          )}
+          {deleteTickets.isError && (
+            <p className="mt-2 text-sm text-destructive">{deleteTickets.error?.message}</p>
           )}
         </div>
       </div>

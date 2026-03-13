@@ -74,3 +74,15 @@ export function useDeleteTicket() {
     },
   });
 }
+
+export function useDeleteTickets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ticketIds: string[]) => {
+      await Promise.all(ticketIds.map((ticketId) => api.deleteTicket(ticketId)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
