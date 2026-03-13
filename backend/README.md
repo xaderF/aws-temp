@@ -35,6 +35,22 @@ API docs:
 - Swagger: `http://localhost:8000/docs`
 - Redoc: `http://localhost:8000/redoc`
 
+## Import Resolution (VS Code)
+
+If VS Code shows `Import ... could not be resolved`, make sure:
+
+1. Backend virtualenv exists and deps are installed:
+
+```bash
+cd backend
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. You opened the project root (`aws-temp`) so workspace settings apply.
+3. VS Code interpreter is `backend/.venv/bin/python` (Command Palette -> `Python: Select Interpreter`).
+
 ## AWS RDS Connection
 
 Set `DATABASE_URL` in `backend/.env`:
