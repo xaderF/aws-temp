@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-api";
+import SignInDialog from "@/components/SignInDialog";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -16,12 +17,19 @@ const Header = () => {
       <div className="max-w-[1080px] mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           <a href="/" className="text-primary-foreground font-bold text-2xl tracking-tight">
-            Compass
+            UTransit
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-primary-foreground/90">
-            <a href="#" className="hover:text-primary-foreground transition-colors">Purchase a Card</a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">Find a Retailer</a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">Help</a>
+            <a href="/#routes" className="hover:text-primary-foreground transition-colors">Routes</a>
+            <a href="/#tickets" className="hover:text-primary-foreground transition-colors">Tickets</a>
+            <a href="/#support" className="hover:text-primary-foreground transition-colors">Support</a>
+            {user ? (
+              <button onClick={handleSignOut} className="hover:text-primary-foreground transition-colors">
+                Sign Out
+              </button>
+            ) : (
+              <SignInDialog triggerClassName="rounded-sm border border-primary-foreground/40 px-3 py-1 hover:bg-primary-foreground/10 text-primary-foreground transition-colors" />
+            )}
           </nav>
           <button
             className="md:hidden text-primary-foreground"
@@ -36,53 +44,22 @@ const Header = () => {
           <a href="/" className="px-5 py-3 text-sm font-semibold text-primary-foreground border-b-2 border-primary-foreground">
             Home
           </a>
-          {user ? (
-            <button onClick={handleSignOut} className="px-5 py-3 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors">
-              Sign Out
-            </button>
-          ) : (
-            <>
-              <a href="#sign-in" className="px-5 py-3 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors">
-                Sign In
-              </a>
-              <a
-                href="#sign-in"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector<HTMLButtonElement>('[data-mode="register"]')?.click();
-                }}
-                className="px-5 py-3 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-              >
-                Register
-              </a>
-            </>
-          )}
         </nav>
 
         {menuOpen && (
           <div className="md:hidden border-t border-primary-foreground/20 py-2">
-            <a href="#" className="block py-2 text-primary-foreground text-sm">Purchase a Card</a>
-            <a href="#" className="block py-2 text-primary-foreground text-sm">Find a Retailer</a>
-            <a href="#" className="block py-2 text-primary-foreground text-sm">Help</a>
+            <a href="/#routes" className="block py-2 text-primary-foreground text-sm">Routes</a>
+            <a href="/#tickets" className="block py-2 text-primary-foreground text-sm">Tickets</a>
+            <a href="/#support" className="block py-2 text-primary-foreground text-sm">Support</a>
             <div className="border-t border-primary-foreground/20 mt-2 pt-2">
               <a href="/" className="block py-2 text-primary-foreground text-sm font-semibold">Home</a>
               {user ? (
                 <button onClick={handleSignOut} className="block py-2 text-primary-foreground/80 text-sm w-full text-left">Sign Out</button>
               ) : (
-                <>
-                  <a href="#sign-in" className="block py-2 text-primary-foreground/80 text-sm">Sign In</a>
-                  <a
-                    href="#sign-in"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMenuOpen(false);
-                      document.querySelector<HTMLButtonElement>('[data-mode="register"]')?.click();
-                    }}
-                    className="block py-2 text-primary-foreground/80 text-sm"
-                  >
-                    Register
-                  </a>
-                </>
+                <SignInDialog
+                  triggerClassName="block py-2 text-primary-foreground/80 text-sm"
+                  onTriggerClick={() => setMenuOpen(false)}
+                />
               )}
             </div>
           </div>
