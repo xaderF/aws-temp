@@ -69,7 +69,6 @@ model PaymentMethod {
 }
 
 model Route {
-<<<<<<< HEAD
   id              String        @id
   name            String
   campus          String
@@ -81,18 +80,6 @@ model Route {
   trips           Trip[]
   buses           Bus[]
   locationEvents  BusLocation[]
-=======
-  id          String      @id
-  name        String
-  campus      String
-  color       String?
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-
-  routeStops  RouteStop[]
-  trips       Trip[]
-  buses       Bus[]
->>>>>>> e99e5c3415204cfab57fff097378447f6b1eb8b0
 }
 
 model Stop {

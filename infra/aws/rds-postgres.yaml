@@ -108,6 +108,9 @@ Resources:
           Value: !Sub '${ProjectName}-postgres'
 
 Outputs:
+  DBSecurityGroupId:
+    Description: Security group ID for RDS (allow ECS/backend to connect)
+    Value: !GetAtt DBSecurityGroup.GroupId
   DBEndpoint:
     Description: RDS endpoint hostname
     Value: !GetAtt PostgresInstance.Endpoint.Address
