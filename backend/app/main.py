@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
 from app.config import get_settings
-from app.database import Base, activate_fallback_engine, get_engine
+from app.database import Base, activate_fallback_engine, apply_sqlite_compat_migrations, get_engine
 from app.routers import auth, routes, stops, tickets, trips, users
 
 settings = get_settings()
@@ -15,6 +15,9 @@ settings = get_settings()
 async def lifespan(_: FastAPI):
     try:
         Base.metadata.create_all(bind=get_engine())
+        applied = apply_sqlite_compat_migrations()
+        if applied:
+            print("[startup] Applied SQLite compatibility migrations:", ", ".join(applied))
     except OperationalError as exc:
         primary_is_postgres = settings.sqlalchemy_database_url.startswith("postgresql+")
         if not (settings.db_fallback_enabled and primary_is_postgres):
@@ -27,6 +30,9 @@ async def lifespan(_: FastAPI):
             f"fallback_url={fallback_url}",
         )
         Base.metadata.create_all(bind=get_engine())
+        applied = apply_sqlite_compat_migrations()
+        if applied:
+            print("[startup] Applied SQLite compatibility migrations:", ", ".join(applied))
     yield
 
 

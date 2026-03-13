@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
@@ -31,6 +31,32 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, clas
 
 def get_engine():
     return engine
+
+
+def apply_sqlite_compat_migrations() -> list[str]:
+    """Patch legacy local SQLite schemas that predate newer model columns."""
+    if engine.dialect.name != "sqlite":
+        return []
+
+    applied: list[str] = []
+    with engine.begin() as conn:
+        table_names = set(inspect(conn).get_table_names())
+        if "users" not in table_names:
+            return applied
+
+        cols = conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()
+        existing_cols = {row[1] for row in cols}
+
+        if "utorid" not in existing_cols:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN utorid VARCHAR(64)")
+            applied.append("users.utorid")
+            conn.exec_driver_sql("CREATE UNIQUE INDEX IF NOT EXISTS uq_users_utorid ON users (utorid)")
+
+        if "is_student" not in existing_cols:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN is_student BOOLEAN NOT NULL DEFAULT 1")
+            applied.append("users.is_student")
+
+    return applied
 
 
 def activate_fallback_engine() -> str:

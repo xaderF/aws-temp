@@ -106,4 +106,8 @@ export const api = {
     fetchApi<Ticket>(`/api/v1/tickets/purchase?type=${encodeURIComponent(type)}`, {
       method: "POST",
     }),
+  deleteTicket: (ticketId: string) =>
+    fetchApi<void>(`/api/v1/tickets/${encodeURIComponent(ticketId)}`, {
+      method: "DELETE",
+    }),
 };

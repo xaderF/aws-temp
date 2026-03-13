@@ -33,11 +33,7 @@ const StudentAccessSection = ({ showMyTicketsLink = false }: { showMyTicketsLink
         </div>
 
         <div className="mt-8 text-center">
-<<<<<<< HEAD
-          {user ? (
-=======
           {showMyTicketsLink ? (
->>>>>>> 1a537a4 (adsiasdpjojpoadsfjopasdf)
             <Link
               to="/tickets"
               className="inline-block bg-secondary text-secondary-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"

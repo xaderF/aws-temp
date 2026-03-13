@@ -63,3 +63,17 @@ def purchase_ticket_post(
     type_param: str = Query(..., alias="type", description="SHUTTLE_SINGLE, SHUTTLE_DAY, or GUEST"),
 ) -> Ticket:
     return _do_purchase(current_user, db, type_param)
+
+
+@router.delete("/tickets/{ticket_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_ticket(
+    ticket_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    ticket = db.scalar(select(Ticket).where(Ticket.id == ticket_id, Ticket.user_id == current_user.id))
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    db.delete(ticket)
+    db.commit()

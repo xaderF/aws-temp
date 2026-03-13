@@ -64,3 +64,13 @@ export function usePurchaseTicket() {
     },
   });
 }
+
+export function useDeleteTicket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ticketId: string) => api.deleteTicket(ticketId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
