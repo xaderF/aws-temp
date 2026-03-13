@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import heroTap from "@/assets/hero-tap.png";
 
 const HeroBanner = () => {
@@ -12,12 +14,12 @@ const HeroBanner = () => {
             <p className="text-muted-foreground text-base mb-6 max-w-md">
               Built for UofT students with digital ticket purchase, TBucks loading, and student ID swipe validation.
             </p>
-            <a
-              href="#sign-in"
+            <Link
+              to="/routes"
               className="inline-block bg-secondary text-secondary-foreground font-semibold px-8 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"
             >
-              Get started
-            </a>
+              Find routes
+            </Link>
           </div>
           <div className="flex-shrink-0">
             <img

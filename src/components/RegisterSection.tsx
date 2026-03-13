@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { SIGN_IN_OPEN_EVENT } from "@/components/SignInDialog";
+import { useCurrentUser } from "@/hooks/use-api";
 
 import iconAutoload from "@/assets/icon-autoload.png";
 import iconPayment from "@/assets/icon-payment.png";
 import iconProtect from "@/assets/icon-protect.png";
 
 const RegisterSection = () => {
+  const { data: user } = useCurrentUser();
+
   const handleOpenTopSignIn = () => {
     window.scrollTo({ top: 0, behavior: "auto" });
     window.dispatchEvent(new Event(SIGN_IN_OPEN_EVENT));
@@ -32,22 +35,33 @@ const RegisterSection = () => {
         </div>
 
         <div className="mt-8 text-center">
-          <Link
-            to="/register"
-            className="inline-block bg-secondary text-secondary-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"
-          >
-            Create student account
-          </Link>
-
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={handleOpenTopSignIn}
-              className="inline-block border border-border text-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:bg-muted transition-colors"
+          {user ? (
+            <Link
+              to="/tickets"
+              className="inline-block bg-secondary text-secondary-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"
             >
-              Sign In
-            </button>
-          </div>
+              My Tickets
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/register"
+                className="inline-block bg-secondary text-secondary-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"
+              >
+                Create student account
+              </Link>
+
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={handleOpenTopSignIn}
+                  className="inline-block border border-border text-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:bg-muted transition-colors"
+                >
+                  Sign In
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>
