@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Starting backend deploy build..."
+      - aws --version
+      - docker --version
+      - chmod +x scripts/deploy-backend-aws.sh
+  build:
+    commands:
+      - ./scripts/deploy-backend-aws.sh
+

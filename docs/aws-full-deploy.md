@@ -43,3 +43,11 @@ Builds the frontend with the backend API URL baked in, uploads to S3, and invali
 - **Database**: RDS PostgreSQL (backend connects via security group)
 
 The frontend calls the backend; the backend connects to RDS. CORS is preconfigured for CloudFront origins.
+
+## GitHub-Based Auto Deploy (Recommended)
+
+If you want deploys triggered by GitHub pushes (instead of running scripts from a laptop), use:
+
+- Setup guide: `docs/aws-github-cicd-setup.md`
+- Pipeline template: `infra/aws/cicd-pipeline.yaml`
+- Helper script: `scripts/deploy-cicd.sh`

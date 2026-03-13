@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: UTransit GitHub-driven CI/CD pipeline (CodePipeline + CodeBuild)
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: utransit
+  PipelineName:
+    Type: String
+    Default: utransit-github-deploy
+  GitHubConnectionArn:
+    Type: String
+    Description: ARN from AWS CodeConnections (GitHub App connection)
+  GitHubRepository:
+    Type: String
+    Description: Full repository id in the form owner/repo
+  GitHubBranch:
+    Type: String
+    Default: main
+  BackendStackName:
+    Type: String
+    Default: utransit-backend
+  FrontendStackName:
+    Type: String
+    Default: utransit-frontend
+  RdsStackName:
+    Type: String
+    Default: utransit-rds
+  DatabaseUrlSsmPath:
+    Type: String
+    Default: /utransit/prod/database_url
+    Description: SSM SecureString parameter path for DATABASE_URL
+  JwtSecretSsmPath:
+    Type: String
+    Default: /utransit/prod/jwt_secret
+    Description: SSM SecureString parameter path for JWT_SECRET
+  CorsOrigins:
+    Type: String
+    Default: http://localhost:5173,http://localhost:8080,https://*.amazonaws.com,https://*.cloudfront.net
+  ArtifactBucketName:
+    Type: String
+    Default: ''
+    Description: Optional existing S3 bucket for pipeline artifacts (leave empty to create one)
+
+Conditions:
+  UseProvidedArtifactBucket: !Not [!Equals [!Ref ArtifactBucketName, '']]
+  CreateArtifactBucket: !Equals [!Ref ArtifactBucketName, '']
+
+Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Condition: CreateArtifactBucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-cicd-artifacts-${AWS::AccountId}-${AWS::Region}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-codebuild-deploy-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-codebuild-deploy-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - ecr:*
+                  - ecs:*
+                  - elasticloadbalancing:*
+                  - ec2:*
+                  - iam:*
+                  - cloudfront:*
+                  - sts:GetCallerIdentity
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - kms:Decrypt
+                Resource: '*'
+
+  PipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-codepipeline-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-codepipeline-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:GetBucketVersioning
+                Resource:
+                  - !If
+                    - UseProvidedArtifactBucket
+                    - !Sub 'arn:aws:s3:::${ArtifactBucketName}'
+                    - !GetAtt ArtifactBucket.Arn
+                  - !If
+                    - UseProvidedArtifactBucket
+                    - !Sub 'arn:aws:s3:::${ArtifactBucketName}/*'
+                    - !Sub '${ArtifactBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource:
+                  - !GetAtt BackendDeployProject.Arn
+                  - !GetAtt FrontendDeployProject.Arn
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                Resource: !Ref GitHubConnectionArn
+
+  BackendDeployProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${ProjectName}-backend-deploy'
+      Description: Deploy backend ECS stack from repo scripts
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/standard:7.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_REGION
+            Type: PLAINTEXT
+            Value: !Ref AWS::Region
+          - Name: PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref ProjectName
+          - Name: STACK_NAME
+            Type: PLAINTEXT
+            Value: !Ref BackendStackName
+          - Name: RDS_STACK_NAME
+            Type: PLAINTEXT
+            Value: !Ref RdsStackName
+          - Name: DATABASE_URL
+            Type: PARAMETER_STORE
+            Value: !Ref DatabaseUrlSsmPath
+          - Name: JWT_SECRET
+            Type: PARAMETER_STORE
+            Value: !Ref JwtSecretSsmPath
+          - Name: CORS_ORIGINS
+            Type: PLAINTEXT
+            Value: !Ref CorsOrigins
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infra/aws/buildspec-backend.yml
+      TimeoutInMinutes: 60
+
+  FrontendDeployProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${ProjectName}-frontend-deploy'
+      Description: Deploy frontend S3 + CloudFront stack from repo scripts
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: AWS_REGION
+            Type: PLAINTEXT
+            Value: !Ref AWS::Region
+          - Name: PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref ProjectName
+          - Name: STACK_NAME
+            Type: PLAINTEXT
+            Value: !Ref FrontendStackName
+          - Name: BACKEND_STACK_NAME
+            Type: PLAINTEXT
+            Value: !Ref BackendStackName
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infra/aws/buildspec-frontend.yml
+      TimeoutInMinutes: 60
+
+  DeployPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Ref PipelineName
+      RoleArn: !GetAtt PipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !If [UseProvidedArtifactBucket, !Ref ArtifactBucketName, !Ref ArtifactBucket]
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceFromGitHub
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: '1'
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn
+                FullRepositoryId: !Ref GitHubRepository
+                BranchName: !Ref GitHubBranch
+                DetectChanges: true
+                OutputArtifactFormat: CODE_ZIP
+              RunOrder: 1
+        - Name: DeployBackend
+          Actions:
+            - Name: DeployBackend
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref BackendDeployProject
+              RunOrder: 1
+        - Name: DeployFrontend
+          Actions:
+            - Name: DeployFrontend
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref FrontendDeployProject
+              RunOrder: 1
+
+Outputs:
+  PipelineName:
+    Description: CI/CD pipeline name
+    Value: !Ref DeployPipeline
+  BackendBuildProject:
+    Description: Backend deploy CodeBuild project
+    Value: !Ref BackendDeployProject
+  FrontendBuildProject:
+    Description: Frontend deploy CodeBuild project
+    Value: !Ref FrontendDeployProject
+  ArtifactBucket:
+    Description: Pipeline artifact bucket in use
+    Value: !If [UseProvidedArtifactBucket, !Ref ArtifactBucketName, !Ref ArtifactBucket]

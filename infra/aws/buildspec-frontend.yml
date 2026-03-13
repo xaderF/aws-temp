@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Starting frontend deploy build..."
+      - npm ci
+      - chmod +x scripts/deploy-frontend-aws.sh
+  build:
+    commands:
+      - ./scripts/deploy-frontend-aws.sh
+

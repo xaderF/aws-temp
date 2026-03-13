@@ -150,6 +150,7 @@ API docs: `http://localhost:8000/docs`
 
 AWS Console setup guide:
 - `docs/aws-rds-console-setup.md`
+- `docs/aws-github-cicd-setup.md` (GitHub -> AWS auto deploy pipeline)
 
 ## Service Layout (Initial)
 

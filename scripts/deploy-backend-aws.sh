@@ -59,7 +59,13 @@ aws ecr describe-repositories --region "${REGION}" --repository-names "${PROJECT
   aws ecr create-repository --region "${REGION}" --repository-name "${PROJECT_NAME}-backend"
 
 echo "Building and pushing Docker image for linux/amd64 (ECS Fargate)..."
-docker buildx build --platform linux/amd64 -t "${ECR_URI}:latest" --push ./backend
+if docker buildx version >/dev/null 2>&1; then
+  docker buildx build --platform linux/amd64 -t "${ECR_URI}:latest" --push ./backend
+else
+  echo "docker buildx not found, falling back to docker build + push."
+  docker build --platform linux/amd64 -t "${ECR_URI}:latest" ./backend
+  docker push "${ECR_URI}:latest"
+fi
 
 echo "Deploying CloudFormation stack ${STACK_NAME}..."
 PARAMS=(
