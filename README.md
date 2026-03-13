@@ -1,6 +1,6 @@
 # UTransit (Temporary Name)
 
-UTransit is a student transit web app for the University of Toronto.
+**Description:** UTransit is a student transit web app for University of Toronto students to explore routes, plan trips, and manage digital tickets in one place.
 
 Current implementation includes:
 - Student account sign up/sign in
