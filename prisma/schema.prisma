@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PassType {
+  STUDENT
+  GUEST
+  SEMESTER
+}
+
+enum PassStatus {
+  ACTIVE
+  EXPIRED
+  FROZEN
+}
+
+enum TicketStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REFUNDED
+}
+
+enum TripStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  studentId      String?         @unique
+  fullName       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  passes         Pass[]
+  tickets        Ticket[]
+  trips          Trip[]
+  payments       Payment[]
+  paymentMethods PaymentMethod[]
+}
+
+model PaymentMethod {
+  id                 String   @id @default(cuid())
+  userId             String
+  provider           String
+  providerCustomerId String?
+  providerToken      String
+  isDefault          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Route {
+  id          String      @id
+  name        String
+  campus      String
+  color       String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  routeStops  RouteStop[]
+  trips       Trip[]
+  buses       Bus[]
+}
+
+model Stop {
+  id             String         @id
+  name           String
+  lat            Float
+  lng            Float
+  createdAt      DateTime       @default(now())
+
+  routeStops     RouteStop[]
+  departures     Trip[]         @relation("TripStartStop")
+  arrivals       Trip[]         @relation("TripEndStop")
+  locationEvents BusLocation[]
+}
+
+model RouteStop {
+  routeId     String
+  stopId      String
+  stopOrder   Int
+  createdAt   DateTime @default(now())
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop  Stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@id([routeId, stopId])
+  @@unique([routeId, stopOrder])
+  @@index([stopId])
+}
+
+model Bus {
+  id              String        @id
+  routeId         String?
+  plateNumber     String?
+  label           String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+
+  route           Route?        @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  trips           Trip[]
+  locationUpdates BusLocation[]
+
+  @@index([routeId])
+}
+
+model Pass {
+  id             String      @id @default(cuid())
+  userId         String
+  type           PassType
+  status         PassStatus  @default(ACTIVE)
+  activatedAt    DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime    @default(now())
+
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trips          Trip[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Ticket {
+  id             String        @id @default(cuid())
+  userId         String
+  status         TicketStatus  @default(ACTIVE)
+  qrCode         String        @unique
+  purchasedAt    DateTime      @default(now())
+  expiresAt      DateTime?
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trips          Trip[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Trip {
+  id             String      @id @default(cuid())
+  userId         String
+  routeId        String
+  busId          String?
+  startStopId    String
+  endStopId      String?
+  startedAt      DateTime
+  endedAt        DateTime?
+  status         TripStatus   @default(IN_PROGRESS)
+  fareCents      Int?
+  passId         String?
+  ticketId       String?
+  createdAt      DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route          Route        @relation(fields: [routeId], references: [id], onDelete: Restrict)
+  bus            Bus?         @relation(fields: [busId], references: [id], onDelete: SetNull)
+  startStop      Stop         @relation("TripStartStop", fields: [startStopId], references: [id], onDelete: Restrict)
+  endStop        Stop?        @relation("TripEndStop", fields: [endStopId], references: [id], onDelete: SetNull)
+  pass           Pass?        @relation(fields: [passId], references: [id], onDelete: SetNull)
+  ticket         Ticket?      @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startedAt])
+  @@index([routeId, startedAt])
+  @@index([status])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  amountCents     Int
+  currency        String        @default("CAD")
+  provider        String
+  providerRef     String?
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model BusLocation {
+  id             String   @id @default(cuid())
+  busId          String
+  routeId        String
+  stopId         String?
+  lat            Float
+  lng            Float
+  speedKph       Float?
+  recordedAt     DateTime
+  createdAt      DateTime @default(now())
+
+  bus            Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
+  route          Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop           Stop?    @relation(fields: [stopId], references: [id], onDelete: SetNull)
+
+  @@index([busId, recordedAt])
+  @@index([routeId, recordedAt])
+}

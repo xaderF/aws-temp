@@ -79,6 +79,78 @@ UTransit aims to unify these into a single experience across:
 ### Mobile
 - React Native + Expo (fast MVP path)
 
+## AWS Database Setup (Implemented)
+
+This repo now includes:
+- CloudFormation template: `infra/aws/rds-postgres.yaml`
+- One-command deploy helper: `scripts/deploy-rds.sh`
+- Prisma schema: `prisma/schema.prisma`
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure AWS CLI
+
+```bash
+aws configure
+```
+
+### 3. Deploy PostgreSQL on RDS
+
+```bash
+DB_PASSWORD='replace-with-strong-password' \
+AWS_REGION='us-east-1' \
+ALLOWED_CIDR='0.0.0.0/0' \
+./scripts/deploy-rds.sh
+```
+
+For hackathon speed, `ALLOWED_CIDR='0.0.0.0/0'` works.  
+For safer access, set it to your public IP CIDR, for example `ALLOWED_CIDR='x.x.x.x/32'`.
+
+### 4. Create local env file
+
+```bash
+cp .env.example .env
+```
+
+Paste the printed `DATABASE_URL` from deploy output into `.env`.
+
+### 5. Run Prisma migration
+
+```bash
+npm run db:migrate
+npm run db:generate
+```
+
+### 6. (Optional) Production migration command
+
+```bash
+npm run db:deploy
+```
+
+## Python Backend (Implemented)
+
+Python API lives in `backend/` using FastAPI + SQLAlchemy.
+
+Quick start:
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+API docs: `http://localhost:8000/docs`
+
+AWS Console setup guide:
+- `docs/aws-rds-console-setup.md`
+
 ## Service Layout (Initial)
 
 - `auth-service`

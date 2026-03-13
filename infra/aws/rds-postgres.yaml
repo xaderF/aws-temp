@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: UTransit hackathon PostgreSQL database on Amazon RDS
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: utransit
+    Description: Prefix for resource names
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where RDS should run
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet ID for DB subnet group
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet ID for DB subnet group
+  AllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: CIDR allowed to connect to Postgres (restrict this to your IP in real usage)
+  DBName:
+    Type: String
+    Default: utransit
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]*'
+    MinLength: 1
+    MaxLength: 63
+  DBUsername:
+    Type: String
+    Default: utransit_admin
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]*'
+    MinLength: 1
+    MaxLength: 63
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 128
+    Description: Master password for PostgreSQL
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    AllowedValues:
+      - db.t3.micro
+      - db.t3.small
+      - db.t4g.micro
+      - db.t4g.small
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+    MinValue: 20
+    MaxValue: 1000
+  PubliclyAccessible:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+Resources:
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName} postgres access'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref AllowedCidr
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-db-sg'
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub '${ProjectName} DB subnet group'
+      SubnetIds:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      DBSubnetGroupName: !Sub '${ProjectName}-db-subnet-group'
+
+  PostgresInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub '${ProjectName}-postgres'
+      DBName: !Ref DBName
+      Engine: postgres
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref AllocatedStorage
+      StorageType: gp3
+      MultiAZ: false
+      PubliclyAccessible: !Ref PubliclyAccessible
+      BackupRetentionPeriod: 1
+      AutoMinorVersionUpgrade: true
+      DeletionProtection: false
+      StorageEncrypted: true
+      VPCSecurityGroups:
+        - !GetAtt DBSecurityGroup.GroupId
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Port: 5432
+      EnablePerformanceInsights: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-postgres'
+
+Outputs:
+  DBEndpoint:
+    Description: RDS endpoint hostname
+    Value: !GetAtt PostgresInstance.Endpoint.Address
+  DBPort:
+    Description: RDS endpoint port
+    Value: !GetAtt PostgresInstance.Endpoint.Port
+  DBNameOutput:
+    Description: Database name
+    Value: !Ref DBName
+  DBUsernameOutput:
+    Description: Database username
+    Value: !Ref DBUsername
+  PrismaUrlTemplate:
+    Description: Replace <PASSWORD> and copy to DATABASE_URL
+    Value: !Sub 'postgresql://${DBUsername}:<PASSWORD>@${PostgresInstance.Endpoint.Address}:${PostgresInstance.Endpoint.Port}/${DBName}?schema=public&sslmode=require'
