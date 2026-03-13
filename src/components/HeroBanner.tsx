@@ -29,12 +29,6 @@ const HeroBanner = () => {
             />
           </div>
         </div>
-
-        <div className="bg-hero-notice text-secondary-foreground px-6 py-3 rounded-sm -mt-2 mb-0">
-          <p className="text-sm">
-            <strong>Current MVP:</strong> online ticket purchase first. Tap hardware and kiosk integrations can be added later.
-          </p>
-        </div>
       </div>
     </section>
   );

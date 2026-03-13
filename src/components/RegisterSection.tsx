@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { SIGN_IN_OPEN_EVENT } from "@/components/SignInDialog";
 import { useCurrentUser } from "@/hooks/use-api";
-import TicketPurchaseSection from "@/components/TicketPurchaseSection";
 
 import iconAutoload from "@/assets/icon-autoload.png";
 import iconPayment from "@/assets/icon-payment.png";
 import iconProtect from "@/assets/icon-protect.png";
 
-const StudentAccessSection = () => {
+const StudentAccessSection = ({ showMyTicketsLink = false }: { showMyTicketsLink?: boolean }) => {
   const handleOpenTopSignIn = () => {
     window.scrollTo({ top: 0, behavior: "auto" });
     window.dispatchEvent(new Event(SIGN_IN_OPEN_EVENT));
@@ -34,7 +33,11 @@ const StudentAccessSection = () => {
         </div>
 
         <div className="mt-8 text-center">
+<<<<<<< HEAD
           {user ? (
+=======
+          {showMyTicketsLink ? (
+>>>>>>> 1a537a4 (adsiasdpjojpoadsfjopasdf)
             <Link
               to="/tickets"
               className="inline-block bg-secondary text-secondary-foreground font-semibold px-10 py-3 rounded-sm text-sm hover:opacity-90 transition-opacity"
@@ -70,12 +73,18 @@ const StudentAccessSection = () => {
 const RegisterSection = () => {
   const { data: user, isLoading } = useCurrentUser();
 
-  // When loading with a token, show TicketPurchaseSection (same layout) to avoid flash
-  if (isLoading || user) {
-    return <TicketPurchaseSection />;
+  if (isLoading) {
+    return (
+      <section className="bg-background py-10" id="sign-in">
+        <div className="max-w-[1080px] mx-auto px-4">
+          <h2 className="text-2xl font-bold text-foreground mb-8">Student access</h2>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </section>
+    );
   }
 
-  return <StudentAccessSection />;
+  return <StudentAccessSection showMyTicketsLink={!!user} />;
 };
 
 export default RegisterSection;

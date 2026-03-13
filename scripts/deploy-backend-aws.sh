@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export AWS_PAGER=""
 
 STACK_NAME="${STACK_NAME:-utransit-backend}"
 RDS_STACK_NAME="${RDS_STACK_NAME:-utransit-rds}"

@@ -1,32 +1,42 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Ticket, TicketType, User
+from app.routers.auth import get_current_user
 from app.schemas import PurchaseTicketIn, TicketOut
 
 router = APIRouter(tags=["tickets"])
 
+EXPIRATION_MAP = {
+    TicketType.SHUTTLE_SINGLE.value: timedelta(hours=2),
+    TicketType.SHUTTLE_DAY.value: timedelta(hours=24),
+    TicketType.GUEST.value: timedelta(days=7),
+}
+VALID_TYPES = ("SHUTTLE_SINGLE", "SHUTTLE_DAY", "GUEST")
 
-@router.post("/tickets/purchase", response_model=TicketOut, status_code=status.HTTP_201_CREATED)
-def purchase_ticket(payload: PurchaseTicketIn, db: Session = Depends(get_db)) -> Ticket:
-    user = db.get(User, payload.user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
 
-    expiration_map = {
-        TicketType.SHUTTLE_SINGLE.value: timedelta(hours=2),
-        TicketType.SHUTTLE_DAY.value: timedelta(hours=24),
-        TicketType.GUEST.value: timedelta(days=7),
-    }
+@router.get("/tickets", response_model=list[TicketOut])
+def list_my_tickets(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[Ticket]:
+    tickets = db.scalars(select(Ticket).where(Ticket.user_id == current_user.id).order_by(Ticket.purchased_at.desc()))
+    return list(tickets)
 
-    expires_at = datetime.utcnow() + expiration_map[payload.type.value]
+
+def _do_purchase(current_user: User, db: Session, type_param: str) -> Ticket:
+    if type_param not in VALID_TYPES:
+        raise HTTPException(status_code=422, detail="type must be SHUTTLE_SINGLE, SHUTTLE_DAY, or GUEST")
+    ticket_type = TicketType(type_param)
+    expires_at = datetime.utcnow() + EXPIRATION_MAP[ticket_type.value]
     ticket = Ticket(
-        user_id=payload.user_id,
-        type=TicketType(payload.type.value),
+        user_id=current_user.id,
+        type=ticket_type,
         qr_code=f"UTR-{uuid4().hex}",
         expires_at=expires_at,
     )
@@ -35,3 +45,21 @@ def purchase_ticket(payload: PurchaseTicketIn, db: Session = Depends(get_db)) ->
     db.commit()
     db.refresh(ticket)
     return ticket
+
+
+@router.get("/tickets/purchase", response_model=TicketOut, status_code=status.HTTP_201_CREATED)
+def purchase_ticket_get(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    type_param: str = Query(..., alias="type", description="SHUTTLE_SINGLE, SHUTTLE_DAY, or GUEST"),
+) -> Ticket:
+    return _do_purchase(current_user, db, type_param)
+
+
+@router.post("/tickets/purchase", response_model=TicketOut, status_code=status.HTTP_201_CREATED)
+def purchase_ticket_post(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    type_param: str = Query(..., alias="type", description="SHUTTLE_SINGLE, SHUTTLE_DAY, or GUEST"),
+) -> Ticket:
+    return _do_purchase(current_user, db, type_param)

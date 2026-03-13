@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export AWS_PAGER=""
 
 STACK_NAME="${STACK_NAME:-utransit-frontend}"
 BACKEND_STACK_NAME="${BACKEND_STACK_NAME:-utransit-backend}"

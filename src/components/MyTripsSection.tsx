@@ -1,4 +1,5 @@
 import { useCurrentUser, useTripHistory } from "@/hooks/use-api";
+import TicketPurchaseSection from "@/components/TicketPurchaseSection";
 
 const MyTripsSection = () => {
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -10,7 +11,7 @@ const MyTripsSection = () => {
     return (
       <section className="bg-background py-10">
         <div className="max-w-[1080px] mx-auto px-4">
-          <h2 className="text-2xl font-bold text-foreground mb-6">My Trips</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Tickets</h2>
           <p className="text-muted-foreground">Loading your profile...</p>
         </div>
       </section>
@@ -21,8 +22,8 @@ const MyTripsSection = () => {
     return (
       <section className="bg-background py-10">
         <div className="max-w-[1080px] mx-auto px-4">
-          <h2 className="text-2xl font-bold text-foreground mb-3">My Trips</h2>
-          <p className="text-muted-foreground">Sign in to view your purchased trips and profile details.</p>
+          <h2 className="text-2xl font-bold text-foreground mb-3">Tickets</h2>
+          <p className="text-muted-foreground">Sign in to view your tickets and trip history.</p>
         </div>
       </section>
     );
@@ -31,7 +32,8 @@ const MyTripsSection = () => {
   return (
     <section className="bg-background py-10">
       <div className="max-w-[1080px] mx-auto px-4">
-        <h2 className="text-2xl font-bold text-foreground mb-2">My Trips</h2>
+        <TicketPurchaseSection />
+        <h2 className="text-2xl font-bold text-foreground mb-2 mt-12">My Trips</h2>
         <p className="text-sm text-muted-foreground mb-6">Trip inventory and profile overview.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

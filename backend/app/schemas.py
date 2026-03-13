@@ -89,8 +89,16 @@ class ArrivalOut(BaseModel):
 
 
 class PurchaseTicketIn(BaseModel):
-    user_id: str
     type: TicketType
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def coerce_type(cls, v: str | TicketType) -> TicketType:
+        if isinstance(v, TicketType):
+            return v
+        if isinstance(v, str) and v in ("SHUTTLE_SINGLE", "SHUTTLE_DAY", "GUEST"):
+            return TicketType(v)
+        raise ValueError("type must be SHUTTLE_SINGLE, SHUTTLE_DAY, or GUEST")
 
 
 class TicketOut(BaseModel):
@@ -100,6 +108,7 @@ class TicketOut(BaseModel):
     status: TicketStatus
     qr_code: str
     purchased_at: datetime
+    expires_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

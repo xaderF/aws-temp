@@ -12,6 +12,7 @@ const labelClass = "block text-sm font-semibold text-foreground mb-1";
 const StudentRegistrationFlow = () => {
   const navigate = useNavigate();
 
+  const [isStudent, setIsStudent] = useState<boolean | null>(null);
   const [studentNumber, setStudentNumber] = useState("");
   const [utorid, setUtorid] = useState("");
   const [fullName, setFullName] = useState("");
@@ -36,13 +37,22 @@ const StudentRegistrationFlow = () => {
   const handleCreateAccount = async () => {
     resetMessages();
 
+    if (isStudent === null) {
+      setError("Please select whether you're a student.");
+      return;
+    }
+
     if (!consentProfile || !consentPayment) {
       setError("Please accept the required terms to continue.");
       return;
     }
 
-    if (!studentNumber || !utorid || !fullName || !studentEmail) {
-      setError("Please complete student number, UTORid, full name, and student email.");
+    if (!fullName || !studentEmail) {
+      setError("Please complete full name and email.");
+      return;
+    }
+    if (isStudent && (!studentNumber || !utorid)) {
+      setError("Please complete student number and UTORid.");
       return;
     }
 
@@ -65,7 +75,9 @@ const StudentRegistrationFlow = () => {
           email: studentEmail,
           password: registerPassword,
           full_name: fullName,
-          student_id: studentNumber,
+          student_id: isStudent ? studentNumber : undefined,
+          utorid: isStudent ? (utorid || undefined) : undefined,
+          is_student: isStudent ?? true,
         }),
       });
       const data = await res.json();
@@ -83,9 +95,9 @@ const StudentRegistrationFlow = () => {
     <section className="bg-background py-10" id="register">
       <div className="max-w-[900px] mx-auto px-4">
         <div className="border border-border rounded-sm p-8 bg-background">
-          <h2 className="text-3xl font-bold text-foreground mb-3">Student registration</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-3">Create account</h2>
           <p className="text-muted-foreground text-lg mb-6">
-            Complete this 4-step setup to create your UTransit account.
+            Complete this 5-step setup to create your UTransit account.
           </p>
 
           <Stepper
@@ -96,7 +108,34 @@ const StudentRegistrationFlow = () => {
             onStepChange={resetMessages}
           >
             <Step>
-              <h4 className="text-base font-semibold text-foreground">1. Terms and consent</h4>
+              <h4 className="text-base font-semibold text-foreground">1. Account type</h4>
+              <p className="text-sm text-muted-foreground mb-4">Are you a UofT student?</p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                  <input
+                    type="radio"
+                    name="isStudent"
+                    className="accent-primary"
+                    checked={isStudent === true}
+                    onChange={() => setIsStudent(true)}
+                  />
+                  Yes, I&apos;m a student
+                </label>
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                  <input
+                    type="radio"
+                    name="isStudent"
+                    className="accent-primary"
+                    checked={isStudent === false}
+                    onChange={() => setIsStudent(false)}
+                  />
+                  No, I&apos;m not a student
+                </label>
+              </div>
+            </Step>
+
+            <Step>
+              <h4 className="text-base font-semibold text-foreground">2. Terms and consent</h4>
               <p className="text-sm text-muted-foreground">
                 To register, you must allow UTransit to use your UofT identity details and payment profile for ticketing.
               </p>
@@ -108,7 +147,9 @@ const StudentRegistrationFlow = () => {
                   checked={consentProfile}
                   onChange={(e) => setConsentProfile(e.target.checked)}
                 />
-                I agree to share my student identity data (student number, UTORid, full name, and student email).
+                {isStudent
+                  ? "I agree to share my student identity data (student number, UTORid, full name, and student email)."
+                  : "I agree to share my account details (name and email) for ticketing."}
               </label>
 
               <label className="flex items-start gap-2 text-sm text-foreground">
@@ -123,30 +164,36 @@ const StudentRegistrationFlow = () => {
             </Step>
 
             <Step>
-              <h4 className="text-base font-semibold text-foreground">2. Student information</h4>
-              <p className="text-sm text-muted-foreground">Enter your required UofT details.</p>
+              <h4 className="text-base font-semibold text-foreground">3. {isStudent ? "Student " : ""}Information</h4>
+              <p className="text-sm text-muted-foreground">
+                {isStudent ? "Enter your required UofT details." : "Enter your account details."}
+              </p>
 
-              <div>
-                <label className={labelClass}>Student number</label>
-                <input
-                  type="text"
-                  value={studentNumber}
-                  onChange={(e) => setStudentNumber(e.target.value)}
-                  placeholder="1001234567"
-                  className={inputClass}
-                />
-              </div>
+              {isStudent && (
+                <>
+                  <div>
+                    <label className={labelClass}>Student number</label>
+                    <input
+                      type="text"
+                      value={studentNumber}
+                      onChange={(e) => setStudentNumber(e.target.value)}
+                      placeholder="1001234567"
+                      className={inputClass}
+                    />
+                  </div>
 
-              <div>
-                <label className={labelClass}>UTORid</label>
-                <input
-                  type="text"
-                  value={utorid}
-                  onChange={(e) => setUtorid(e.target.value)}
-                  placeholder="yourutorid"
-                  className={inputClass}
-                />
-              </div>
+                  <div>
+                    <label className={labelClass}>UTORid</label>
+                    <input
+                      type="text"
+                      value={utorid}
+                      onChange={(e) => setUtorid(e.target.value)}
+                      placeholder="yourutorid"
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className={labelClass}>Full name</label>
@@ -160,19 +207,19 @@ const StudentRegistrationFlow = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Student email</label>
+                <label className={labelClass}>{isStudent ? "Student email" : "Email"}</label>
                 <input
                   type="email"
                   value={studentEmail}
                   onChange={(e) => setStudentEmail(e.target.value)}
-                  placeholder="you@mail.utoronto.ca"
+                  placeholder={isStudent ? "you@mail.utoronto.ca" : "you@example.com"}
                   className={inputClass}
                 />
               </div>
             </Step>
 
             <Step>
-              <h4 className="text-base font-semibold text-foreground">3. Account setup</h4>
+              <h4 className="text-base font-semibold text-foreground">4. Account setup</h4>
               <p className="text-sm text-muted-foreground">Create your login and choose setup preferences.</p>
 
               <div>
@@ -206,28 +253,35 @@ const StudentRegistrationFlow = () => {
                 Enable TBucks loading
               </label>
 
-              <label className="flex items-center gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  className="accent-primary"
-                  checked={consentSwipe}
-                  onChange={(e) => setConsentSwipe(e.target.checked)}
-                />
-                Enable student ID swipe validation (pilot)
-              </label>
+              {isStudent && (
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    className="accent-primary"
+                    checked={consentSwipe}
+                    onChange={(e) => setConsentSwipe(e.target.checked)}
+                  />
+                  Enable student ID swipe validation (pilot)
+                </label>
+              )}
             </Step>
 
             <Step>
-              <h4 className="text-base font-semibold text-foreground">4. Confirmation</h4>
+              <h4 className="text-base font-semibold text-foreground">5. Confirmation</h4>
               <p className="text-sm text-muted-foreground">Review and confirm your signup.</p>
 
               <div className="text-sm text-foreground space-y-1">
-                <p><strong>Student number:</strong> {studentNumber || "-"}</p>
-                <p><strong>UTORid:</strong> {utorid || "-"}</p>
+                <p><strong>Account type:</strong> {isStudent ? "Student" : "Non-student"}</p>
+                {isStudent && (
+                  <>
+                    <p><strong>Student number:</strong> {studentNumber || "-"}</p>
+                    <p><strong>UTORid:</strong> {utorid || "-"}</p>
+                  </>
+                )}
                 <p><strong>Full name:</strong> {fullName || "-"}</p>
-                <p><strong>Student email:</strong> {studentEmail || "-"}</p>
+                <p><strong>Email:</strong> {studentEmail || "-"}</p>
                 <p><strong>TBucks loading:</strong> {tbucksEnabled ? "Enabled" : "Not enabled"}</p>
-                <p><strong>ID swipe validation:</strong> {consentSwipe ? "Enabled" : "Not enabled"}</p>
+                {isStudent && <p><strong>ID swipe validation:</strong> {consentSwipe ? "Enabled" : "Not enabled"}</p>}
               </div>
 
               {error && <p className="text-sm text-destructive">{error}</p>}

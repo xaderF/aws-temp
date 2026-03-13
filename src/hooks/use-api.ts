@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { api, type User } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, type TicketType, type User } from "@/lib/api";
 
 export function useRoutes() {
   return useQuery({
@@ -44,5 +44,23 @@ export function useCurrentUser() {
     enabled: hasValidToken,
     retry: false,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useMyTickets(user: User | null) {
+  return useQuery({
+    queryKey: ["tickets", user?.id],
+    queryFn: () => api.getMyTickets(),
+    enabled: !!user,
+  });
+}
+
+export function usePurchaseTicket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (type: TicketType) => api.purchaseTicket(type),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
   });
 }

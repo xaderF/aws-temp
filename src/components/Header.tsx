@@ -15,7 +15,7 @@ import {
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: user } = useCurrentUser();
+  const { data: user, isLoading: userLoading } = useCurrentUser();
 
   const initials = (() => {
     if (!user) return "U";
@@ -50,7 +50,9 @@ const Header = () => {
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-primary-foreground/90">
             <a href="/#support" className="hover:text-primary-foreground transition-colors">Support</a>
-            {user ? (
+            {userLoading ? (
+              <span className="text-primary-foreground/60 text-sm">Loading...</span>
+            ) : user ? (
               <div className="flex items-center gap-3">
                 <button onClick={handleSignOut} className="hover:text-primary-foreground transition-colors">
                   Sign Out
@@ -137,7 +139,9 @@ const Header = () => {
               <Link to="/settings" className="block py-2 text-primary-foreground text-sm" onClick={() => setMenuOpen(false)}>
                 Settings
               </Link>
-              {user ? (
+              {userLoading ? (
+                <span className="text-primary-foreground/60 text-sm py-2 block">Loading...</span>
+              ) : user ? (
                 <div className="flex items-center gap-2 py-2">
                   <Avatar className="h-7 w-7 border border-primary-foreground/50" title={user.email}>
                     <AvatarFallback className="bg-primary-foreground/15 text-primary-foreground text-xs font-semibold">

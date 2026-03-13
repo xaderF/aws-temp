@@ -43,6 +43,8 @@ model User {
   id             String          @id @default(cuid())
   email          String          @unique
   studentId      String?         @unique
+  utorid         String?         @unique
+  isStudent      Boolean         @default(true)
   fullName       String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
