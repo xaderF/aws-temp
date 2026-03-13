@@ -8,7 +8,7 @@ const RoutesSection = () => {
 
   if (routesLoading) {
     return (
-      <section className="bg-card py-10">
+      <section className="bg-card py-10" id="routes">
         <div className="max-w-[1080px] mx-auto px-4">
           <h2 className="text-2xl font-bold text-foreground mb-6">Routes</h2>
           <p className="text-muted-foreground">Loading routes...</p>
@@ -19,7 +19,7 @@ const RoutesSection = () => {
 
   if (routesError) {
     return (
-      <section className="bg-card py-10">
+      <section className="bg-card py-10" id="routes">
         <div className="max-w-[1080px] mx-auto px-4">
           <h2 className="text-2xl font-bold text-foreground mb-6">Routes</h2>
           <p className="text-destructive">Unable to load routes. Make sure the backend is running.</p>
@@ -29,9 +29,9 @@ const RoutesSection = () => {
   }
 
   return (
-    <section className="bg-card py-10">
+    <section className="bg-card py-10" id="routes">
       <div className="max-w-[1080px] mx-auto px-4">
-        <h2 className="text-2xl font-bold text-foreground mb-6">Routes</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">Campus routes</h2>
 
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-64 flex-shrink-0">

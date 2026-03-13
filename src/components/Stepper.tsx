@@ -19,7 +19,9 @@ type StepperProps = HTMLAttributes<HTMLDivElement> & {
   footerClassName?: string;
   backButtonText?: string;
   nextButtonText?: string;
+  finalButtonText?: string;
   disableStepIndicators?: boolean;
+  hideFooterOnLastStep?: boolean;
   renderStepIndicator?: (args: RenderStepIndicatorArgs) => ReactNode;
 };
 
@@ -42,7 +44,9 @@ export default function Stepper({
   footerClassName = "",
   backButtonText = "Back",
   nextButtonText = "Next",
+  finalButtonText = "Complete",
   disableStepIndicators = false,
+  hideFooterOnLastStep = false,
   renderStepIndicator,
   ...rest
 }: StepperProps) {
@@ -129,7 +133,7 @@ export default function Stepper({
           <div className={`stepper-content ${contentClassName}`}>{stepsArray[currentStep - 1]}</div>
         )}
 
-        {!isCompleted && (
+        {!isCompleted && !(hideFooterOnLastStep && isLastStep) && (
           <div className={`stepper-footer ${footerClassName}`}>
             <div className={`stepper-footer-actions ${currentStep === 1 ? "only-next" : "spread"}`}>
               {currentStep !== 1 && (
@@ -138,7 +142,7 @@ export default function Stepper({
                 </button>
               )}
               <button type="button" onClick={handleNext} className="stepper-btn stepper-btn-next">
-                {isLastStep ? "Complete" : nextButtonText}
+                {isLastStep ? finalButtonText : nextButtonText}
               </button>
             </div>
           </div>

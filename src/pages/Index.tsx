@@ -3,7 +3,7 @@ import HeroBanner from "@/components/HeroBanner";
 import RegisterSection from "@/components/RegisterSection";
 import RoutesSection from "@/components/RoutesSection";
 import MyTripsSection from "@/components/MyTripsSection";
-import CompassBasics from "@/components/CompassBasics";
+import UTransitBasics from "@/components/UTransitBasics";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -15,7 +15,7 @@ const Index = () => {
         <RegisterSection />
         <RoutesSection />
         <MyTripsSection />
-        <CompassBasics />
+        <UTransitBasics />
       </main>
       <Footer />
     </div>

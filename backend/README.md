@@ -35,8 +35,6 @@ API docs:
 - Swagger: `http://localhost:8000/docs`
 - Redoc: `http://localhost:8000/redoc`
 
-<<<<<<< HEAD
-=======
 ## Import Resolution (VS Code)
 
 If VS Code shows `Import ... could not be resolved`, make sure:
@@ -53,13 +51,19 @@ pip install -r requirements.txt
 2. You opened the project root (`aws-temp`) so workspace settings apply.
 3. VS Code interpreter is `backend/.venv/bin/python` (Command Palette -> `Python: Select Interpreter`).
 
->>>>>>> e99e5c3415204cfab57fff097378447f6b1eb8b0
 ## AWS RDS Connection
 
 Set `DATABASE_URL` in `backend/.env`:
 
 ```bash
 DATABASE_URL="postgresql://utransit_admin:<password>@<rds-endpoint>:5432/utransit?sslmode=require"
+```
+
+Optional fallback in dev (recommended for hackathons):
+
+```bash
+DB_FALLBACK_ENABLED=true
+DB_FALLBACK_DATABASE_URL="sqlite:///./utransit.db"
 ```
 
 Then start the API and run seed script.

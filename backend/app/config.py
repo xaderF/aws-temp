@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_port: int = 8000
     database_url: str = "sqlite:///./utransit.db"
+    db_fallback_enabled: bool = True
+    db_fallback_database_url: str = "sqlite:///./utransit.db"
     cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080"
     cors_origin_regex: str = "https://.*\\.cloudfront\\.net"
     jwt_secret: str = "change-me-in-production"
@@ -34,6 +36,13 @@ class Settings(BaseSettings):
             url = _strip_schema_param(self.database_url)
             return url.replace("postgresql://", "postgresql+psycopg://", 1)
         return self.database_url
+
+    @property
+    def sqlalchemy_fallback_database_url(self) -> str:
+        if self.db_fallback_database_url.startswith("postgresql://"):
+            url = _strip_schema_param(self.db_fallback_database_url)
+            return url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return self.db_fallback_database_url
 
     @property
     def cors_origin_list(self) -> list[str]:
