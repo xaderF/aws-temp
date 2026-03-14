@@ -1,148 +1,39 @@
 # UTransit
 
-UTransit is a student-focused transit web app built for the University of Toronto community, including students commuting between St. George, Scarborough, and Mississauga campuses. The platform brings together route discovery, stop and schedule lookup, trip planning, and digital ticket and pass management so users can move from planning to boarding in a single workflow. Instead of switching between separate apps, PDF schedules, and fare tools, students can sign in, review available routes, purchase and manage tickets, and track trip-related activity from one centralized interface. The project is designed to reduce transit friction for daily campus travel by making access, navigation, and transit account actions faster and easier to manage.
+UTransit is a hackathon-built transit prototype for the University of Toronto community, designed to unify route discovery, trip planning, and digital ticket management for travel across St. George, Scarborough, and Mississauga.
 
-Current implementation includes:
-- Student account sign up/sign in
-- Campus route browsing
-- Digital ticket purchase and ticket management (including delete)
-- Basic trip and profile pages
+Built as a working prototype during a hackathon sprint.
 
-It combines route discovery, trip planning, shuttle access, and wallet/ticket management in one system.
+## Why UTransit?
 
-Potential final names:
-- UTransit
-- BlueTransit
-- UFlow
+UofT transit workflows are fragmented across separate schedules, route lookup tools, and fare systems. UTransit brings core student transit actions into one interface.
 
-## Problem
+## What We Built
 
-UofT students currently use disconnected tools:
-- TTC fares: Presto
-- Campus shuttle schedules: scattered PDFs
-- Live bus info: third-party apps
-- Pass/ticket management: no unified student-focused portal
+- Student registration, login, and authenticated profile flow
+- Route browsing and route stop lookup
+- Ticket wallet with purchase, listing, and delete actions
+- Trip history API and frontend trip/profile/settings pages
+- FastAPI backend with SQLAlchemy models and JWT auth
+- Prisma schema + PostgreSQL migration tooling
+- AWS deployment infrastructure templates and helper scripts
 
-UTransit aims to unify these into a single experience across:
-- St. George campus
-- Scarborough campus
-- Mississauga campus
-- Nearby TTC connections
+## Product Visuals
 
-## MVP Goals
+![UTransit hero visual](src/assets/hero-tap.png)
+![UTransit fare visual](src/assets/basics-fares.jpg)
 
-### 1. Account
-- Email/Google login
-- Student ID linking
-- Profile management
+## Tech Stack Used
 
-### 2. Route Explorer
-- Campus route map
-- Stops and schedule visibility
-- Nearest stop + next arrival
+- Frontend: Vite, React, TypeScript, React Router, Tailwind CSS, TanStack Query
+- Backend: FastAPI, SQLAlchemy, Pydantic, JWT auth
+- Database: PostgreSQL (primary), SQLite fallback for local development
+- Data tooling: Prisma
+- Infra: AWS RDS, ECS/Fargate, S3 + CloudFront, CloudFormation
 
-### 3. Trip Planner
-- Start + destination input
-- Route + walking segments + transfers
-- Arrival estimates
+## Quick Start (Local)
 
-### 4. Pass + Ticket Wallet
-- Student pass
-- Guest ticket
-- Semester pass
-- QR ticket display and validation support
-
-### 5. Ride Tracking
-- Current bus location (MVP: schedule-based or driver GPS feed)
-- ETA display
-- Basic crowding estimate (optional early MVP)
-
-### 6. Trip History
-- Recent rides
-- Charges/pass usage
-- Wallet activity
-
-## Core Product Model (Compass-Inspired)
-
-- Account system: identity, payment methods, usage history, auto-reload
-- Transit payment/ticketing: fare or pass validation, zone logic where needed
-- Rider history: trips, charges, balance/pass status
-- Management portal: fund loading, card/pass freeze, card/pass replacement
-
-## Recommended Stack
-
-### Backend
-- Node.js + Fastify
-- PostgreSQL
-- Prisma
-- Redis (caching)
-- WebSockets (real-time updates)
-
-### Frontend (Web)
-- Next.js
-- Tailwind CSS
-- Mapbox GL
-
-### Mobile
-- React Native + Expo (fast MVP path)
-
-## AWS Database Setup (Implemented)
-
-This repo now includes:
-- CloudFormation template: `infra/aws/rds-postgres.yaml`
-- One-command deploy helper: `scripts/deploy-rds.sh`
-- Prisma schema: `prisma/schema.prisma`
-
-### 1. Install dependencies
-
-```bash
-npm install
-```
-
-### 2. Configure AWS CLI
-
-```bash
-aws configure
-```
-
-### 3. Deploy PostgreSQL on RDS
-
-```bash
-DB_PASSWORD='replace-with-strong-password' \
-AWS_REGION='us-east-1' \
-ALLOWED_CIDR='0.0.0.0/0' \
-./scripts/deploy-rds.sh
-```
-
-For hackathon speed, `ALLOWED_CIDR='0.0.0.0/0'` works.  
-For safer access, set it to your public IP CIDR, for example `ALLOWED_CIDR='x.x.x.x/32'`.
-
-### 4. Create local env file
-
-```bash
-cp .env.example .env
-```
-
-Paste the printed `DATABASE_URL` from deploy output into `.env`.
-
-### 5. Run Prisma migration
-
-```bash
-npm run db:migrate
-npm run db:generate
-```
-
-### 6. (Optional) Production migration command
-
-```bash
-npm run db:deploy
-```
-
-## Python Backend (Implemented)
-
-Python API lives in `backend/` using FastAPI + SQLAlchemy.
-
-Quick start:
+### 1. Start the backend
 
 ```bash
 cd backend
@@ -150,127 +41,62 @@ python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
+python -m app.seed
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API docs: `http://localhost:8000/docs`
+Backend docs: `http://localhost:8000/docs`
 
-AWS Console setup guide:
-- `docs/aws-rds-console-setup.md`
-- `docs/aws-github-cicd-setup.md` (GitHub -> AWS auto deploy pipeline)
+### 2. Start the frontend
 
-## Service Layout (Initial)
+In a new terminal:
 
-- `auth-service`
-- `transit-service`
-- `ticket-service`
-- `location-service`
-
-Example APIs:
-- `GET /routes`
-- `GET /routes/:id/stops`
-- `GET /stops/:id/arrivals`
-- `POST /tickets/purchase`
-- `GET /trips/history`
-
-## Initial Data Model
-
-Key tables:
-- `users`
-- `passes`
-- `tickets`
-- `routes`
-- `stops`
-- `buses`
-- `trips`
-- `payments`
-
-Example fields:
-
-```sql
-users (
-  id,
-  email,
-  student_id,
-  created_at
-)
-
-routes (
-  id,
-  name,
-  campus,
-  color
-)
-
-stops (
-  id,
-  name,
-  lat,
-  lng,
-  route_id
-)
+```bash
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-## Real-Time Events
+Frontend app: `http://localhost:5173`
 
-WebSocket channels:
-- `bus_location_updates`
-- `arrival_updates`
+## API Scope
 
-Driver or system feeds may send:
-- latitude / longitude
-- speed
-- route id
-- timestamp
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
+- `GET /api/v1/routes`
+- `GET /api/v1/routes/{route_id}/stops`
+- `GET /api/v1/tickets`
+- `POST /api/v1/tickets/purchase?type=...`
+- `DELETE /api/v1/tickets/{ticket_id}`
+- `GET /api/v1/trips/history`
 
-## Data Sources
+## Project Structure
 
-Use GTFS-compatible feeds where available:
-- `routes.txt`
-- `trips.txt`
-- `stop_times.txt`
-- `stops.txt`
+```text
+.
+├── src/                 # React frontend pages/components/hooks
+├── backend/             # FastAPI backend app + routers + seed scripts
+├── prisma/              # Prisma schema
+├── infra/aws/           # CloudFormation templates (RDS/ECS/S3/CloudFront/CI-CD)
+├── scripts/             # Deployment helper scripts
+└── docs/                # AWS deployment and setup guides
+```
 
-Possible integrations:
-- OpenTripPlanner
-- GTFS processing libraries
+## AWS Deployment Guides
 
-## MVP Timeline (5 Weeks)
+- Full stack deployment: `docs/aws-full-deploy.md`
+- RDS setup: `docs/aws-rds-console-setup.md`
+- Backend deploy: `docs/aws-backend-deploy.md`
+- GitHub CI/CD deploy: `docs/aws-github-cicd-setup.md`
 
-### Week 1
-- Product planning
-- Database schema
-- Route/stop ingestion model
+## What's Planned Next
 
-### Week 2
-- Core backend APIs
-- Arrival prediction baseline
-
-### Week 3
-- Web map with route overlays + stop markers
-
-### Week 4
-- Wallet, passes, QR tickets, payment wiring
-
-### Week 5
-- Mobile MVP (map, trip planner, wallet)
-
-## Longer-Term Features
-
-- Smart fare caps (daily/monthly)
-- Student pricing rules engine
-- Better crowding prediction
-- NFC support (Apple Pay / Google Pay pathways)
-
-## Why This Project Matters
-
-UTransit demonstrates:
-- distributed service design
-- real-time systems
-- geo/transit data modeling
-- payment and wallet architecture
-- web + mobile product execution
+- Live transit feed ingestion and real-time ETA improvements
+- Better route search and stop discovery UX
+- Expanded fare logic and pass management
+- Production hardening for auth, observability, and error monitoring
 
 ## Status
 
-This repository currently contains product planning documentation for MVP definition and architecture direction.
+Working hackathon prototype with implemented frontend flows, backend APIs, and database/deployment foundations. Not production-ready yet.
